@@ -1,0 +1,144 @@
+{
+  "$comment": "Pre-authorized operations for ibiztech-claude-template workflow. Reduces 'Allow?' prompts for routine, safe tasks. Destructive/sensitive ops still require approval.",
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Glob(**)",
+      "Grep(**)",
+      "Bash(ls:*)",
+      "Bash(pwd)",
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(tree:*)",
+
+      "Bash(pnpm test:*)",
+      "Bash(pnpm test)",
+      "Bash(pnpm vitest:*)",
+      "Bash(pnpm jest:*)",
+      "Bash(npm test:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx jest:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm build)",
+      "Bash(pnpm format:*)",
+      "Bash(pnpm dev)",
+      "Bash(curl:*)",
+
+      "Bash(git status)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git config --get:*)",
+
+      "Bash(pnpm prisma generate)",
+      "Bash(pnpm prisma format)",
+      "Bash(pnpm dlx prisma generate)",
+      "Bash(pnpm dlx prisma format)",
+      "Bash(pnpm dlx prisma validate)",
+
+      "Bash(bash scripts/*)",
+      "Bash(./scripts/*)",
+
+      "Edit(docs/test-reports/**)",
+      "Edit(docs/test-reports/screenshots/**)",
+      "Edit(docs/10-value-research.md)",
+      "Edit(docs/11-test-cases.md)",
+      "Edit(docs/12-log-issues.md)",
+      "Edit(docs/13-testcase-log.md)",
+      "Edit(docs/14-feature-release.md)",
+      "Edit(docs/15-sprint.md)",
+      "Edit(docs/16-client-artifacts.md)",
+      "Edit(docs/client-artifacts/**)",
+      "Write(docs/client-artifacts/**)",
+      "Read(docs/client-artifacts/**)",
+      "Edit(docs/feature-assets/**)",
+      "Write(docs/feature-assets/**)",
+      "Edit(docs/07-implement-plan.md)",
+      "Write(docs/test-reports/**)",
+      "Write(docs/test-reports/screenshots/**)",
+
+      "mcp__playwright__*"
+    ],
+    "ask": [
+      "Edit(src/**)",
+      "Edit(apps/**)",
+      "Edit(packages/**)",
+      "Edit(prisma/**)",
+      "Edit(docs/01-requirement.md)",
+      "Edit(docs/02-architecture.md)",
+      "Edit(docs/03-tech-stack.md)",
+      "Edit(docs/04-database-schema.md)",
+      "Edit(docs/05-api-spec.md)",
+      "Edit(docs/05-datadictionary.md)",
+      "Edit(docs/06-ux-ui-design.md)",
+      "Edit(docs/08-performance-security.md)",
+      "Edit(docs/09-testing.md)",
+      "Edit(CLAUDE.md)",
+      "Write(src/**)",
+      "Write(apps/**)",
+      "Write(packages/**)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm dlx prisma migrate:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(git rebase:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.production)",
+      "Read(**/secrets/**)",
+      "Read(**/*.key)",
+      "Read(**/*.pem)",
+      "Bash(rm -rf:*)",
+      "Bash(rm -fr:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean -f:*)",
+      "Bash(pnpm dlx prisma migrate reset:*)",
+      "Bash(npm publish:*)",
+      "Bash(pnpm publish:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/check-artifacts.sh 2>/dev/null || true"
+          },
+          {
+            "type": "command",
+            "command": "bash scripts/find-next.sh 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/progress.sh --silent 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -55,10 +55,27 @@ rm -rf variants/
 
 # 6. init git (ถ้ายังไม่มี)
 if [ ! -d ".git" ]; then
-  git init
-  git add .
-  git commit -m "init: project setup from ibiztech-claude-template"
-  echo -e "${GREEN}✅ git init + initial commit${NC}"
+  git init -q
+
+  # ตรวจ git identity (global หรือ local)
+  GIT_NAME=$(git config --get user.name || echo "")
+  GIT_EMAIL=$(git config --get user.email || echo "")
+
+  if [ -z "$GIT_NAME" ] || [ -z "$GIT_EMAIL" ]; then
+    echo -e "${YELLOW}⚠️  git identity ยังไม่ตั้ง — ข้าม initial commit${NC}"
+    echo "   ตั้งก่อน commit:"
+    echo "     git config --global user.name \"Your Name\""
+    echo "     git config --global user.email \"you@example.com\""
+    echo "   แล้ว:"
+    echo "     git add . && git commit -m 'init: project setup'"
+  else
+    git add .
+    if git commit -q -m "init: project setup from ibiztech-claude-template"; then
+      echo -e "${GREEN}✅ git init + initial commit ($GIT_NAME <$GIT_EMAIL>)${NC}"
+    else
+      echo -e "${YELLOW}⚠️  git init เสร็จ แต่ commit ไม่ผ่าน — รัน manual${NC}"
+    fi
+  fi
 fi
 
 echo ""

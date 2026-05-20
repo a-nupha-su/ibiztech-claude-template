@@ -53,6 +53,31 @@ done
 # 5. ลบ variants folder (ไม่ต้องเหลือใน project)
 rm -rf variants/
 
+# 5.1 ถาม Quality Pipeline (Sonar + JMeter + Claude)
+echo ""
+echo -e "${YELLOW}Quality Pipeline (CI/CD):${NC}"
+echo "  - SonarQube: static code analysis (recommended)"
+echo "  - JMeter:    load/performance test"
+echo "  - Claude:    auto-fix on quality gate failure"
+echo ""
+read -p "ตั้ง SonarQube + Claude auto-fix ไหม? (Y/n): " SETUP_SONAR
+SETUP_SONAR="${SETUP_SONAR:-Y}"
+if [[ "$SETUP_SONAR" =~ ^[Yy]$ ]]; then
+  PROJECT_KEY=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
+  bash scripts/setup-sonar.sh "$PROJECT_KEY" "$PROJECT_NAME"
+else
+  echo -e "${YELLOW}⏭  ข้าม Sonar — รัน 'bash scripts/setup-sonar.sh' ทีหลังได้${NC}"
+fi
+
+echo ""
+read -p "ตั้ง JMeter load test ไหม? (y/N): " SETUP_JMETER
+SETUP_JMETER="${SETUP_JMETER:-N}"
+if [[ "$SETUP_JMETER" =~ ^[Yy]$ ]]; then
+  bash scripts/setup-jmeter.sh
+else
+  echo -e "${YELLOW}⏭  ข้าม JMeter — รัน 'bash scripts/setup-jmeter.sh' ทีหลังได้${NC}"
+fi
+
 # 6. init git (ถ้ายังไม่มี)
 if [ ! -d ".git" ]; then
   git init -q
@@ -82,14 +107,18 @@ echo ""
 echo -e "${GREEN}=== Setup เสร็จแล้ว ===${NC}"
 echo ""
 echo -e "${YELLOW}Automation ที่ติดมา (พร้อมใช้ทันที):${NC}"
-echo "  .claude/settings.json   ← permission allowlist + hooks"
-echo "  scripts/find-next.sh    ← หา task ถัดไปที่พร้อมทำ"
-echo "  scripts/new-task.sh     ← เริ่ม task (mark [~] + TC stub)"
-echo "  scripts/new-report.sh   ← สร้าง Test Report จาก template"
-echo "  scripts/log-test.sh     ← append log ใน 13"
-echo "  scripts/log-issue.sh    ← สร้าง ISS-XXX ใน 12"
-echo "  scripts/check-dod.sh    ← verify 6 DoD ก่อน mark [x]"
-echo "  scripts/progress.sh     ← recalc Summary Progress"
+echo "  .claude/settings.json                  ← permission allowlist + hooks"
+echo "  .github/workflows/quality-pipeline.yml ← Sonar + JMeter + Claude (เลือกใน dispatch)"
+echo "  scripts/find-next.sh                   ← หา task ถัดไปที่พร้อมทำ"
+echo "  scripts/new-task.sh                    ← เริ่ม task (mark [~] + TC stub)"
+echo "  scripts/new-report.sh                  ← สร้าง Test Report จาก template"
+echo "  scripts/log-test.sh                    ← append log ใน 13"
+echo "  scripts/log-issue.sh                   ← สร้าง ISS-XXX ใน 12"
+echo "  scripts/check-dod.sh                   ← verify 6 DoD ก่อน mark [x]"
+echo "  scripts/progress.sh                    ← recalc Summary Progress"
+echo "  scripts/setup-sonar.sh                 ← (re)configure Sonar key/host"
+echo "  scripts/setup-jmeter.sh                ← (re)configure JMeter target/thresholds"
+echo "  scripts/run-jmeter.sh                  ← run JMeter local (ก่อน push CI)"
 echo ""
 echo -e "${YELLOW}ขั้นตอนถัดไป (ทำก่อนเขียนโค้ดบรรทัดแรก):${NC}"
 echo "  0. (ถ้า requirement ยังไม่ชัด) เปิด docs/10-value-research.md"

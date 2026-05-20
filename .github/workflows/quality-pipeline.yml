@@ -1,0 +1,308 @@
+name: Quality Pipeline (Sonar + JMeter + Claude)
+
+# iBizTech template — Unified quality pipeline
+# - Sonar  : static code analysis  (default: ON for push/PR)
+# - JMeter : load/perf testing      (default: OFF — opt-in via dispatch)
+# - Claude : auto-fix on failure    (default: ON for push only)
+#
+# Manual run: Actions → Quality Pipeline → Run workflow → ติ๊กเลือก
+# Required secrets: SONAR_TOKEN, SONAR_HOST_URL, ANTHROPIC_API_KEY
+# Optional secrets: JMETER_TARGET_URL  (ถ้าไม่ใส่ใน input)
+# (ดู docs/17-sonar-setup.md + docs/18-jmeter-setup.md)
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      run_sonar:
+        description: "Run SonarQube scan"
+        type: boolean
+        default: true
+      run_jmeter:
+        description: "Run JMeter load test"
+        type: boolean
+        default: false
+      jmeter_target_url:
+        description: "JMeter target URL (overrides secret)"
+        type: string
+        default: ""
+      auto_fix:
+        description: "Let Claude auto-fix failures"
+        type: boolean
+        default: true
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # =====================================================
+  # JOB 1: SonarQube — static analysis
+  # =====================================================
+  sonar:
+    name: SonarQube Scan
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_sonar || (github.event_name != 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      gate_status: ${{ steps.gate.outputs.quality-gate-status }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect package manager
+        id: pm
+        run: |
+          if [ -f pnpm-lock.yaml ]; then echo "pm=pnpm" >> $GITHUB_OUTPUT
+          elif [ -f yarn.lock ]; then echo "pm=yarn" >> $GITHUB_OUTPUT
+          elif [ -f package-lock.json ]; then echo "pm=npm" >> $GITHUB_OUTPUT
+          else echo "pm=none" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Node
+        if: steps.pm.outputs.pm != 'none'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        if: steps.pm.outputs.pm == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install deps + coverage
+        if: steps.pm.outputs.pm != 'none'
+        run: |
+          case "${{ steps.pm.outputs.pm }}" in
+            pnpm) pnpm install --frozen-lockfile && pnpm test --coverage || true ;;
+            yarn) yarn install --frozen-lockfile && yarn test --coverage || true ;;
+            npm)  npm ci && npm test -- --coverage || true ;;
+          esac
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v3
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      - name: Quality Gate
+        id: gate
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        uses: SonarSource/sonarqube-quality-gate-action@master
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      - name: PR comment — Sonar result
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: sonar-gate
+          message: |
+            ### SonarQube Quality Gate: `${{ steps.gate.outputs.quality-gate-status || 'UNKNOWN' }}`
+
+            [View on SonarQube](${{ secrets.SONAR_HOST_URL }}/dashboard?id=${{ github.event.repository.name }})
+
+  # =====================================================
+  # JOB 2: JMeter — load / performance test
+  # =====================================================
+  jmeter:
+    name: JMeter Load Test
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_jmeter }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      result: ${{ steps.check.outputs.result }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate JMeter assets
+        run: |
+          if [ ! -f tests/jmeter/baseline.jmx ]; then
+            echo "::error::tests/jmeter/baseline.jmx not found — run 'bash scripts/setup-jmeter.sh'"
+            exit 1
+          fi
+
+      - name: Resolve target URL
+        id: target
+        env:
+          INPUT_URL: ${{ inputs.jmeter_target_url }}
+          SECRET_URL: ${{ secrets.JMETER_TARGET_URL }}
+        run: |
+          URL="${INPUT_URL:-$SECRET_URL}"
+          if [ -z "$URL" ]; then
+            echo "::error::No JMeter target URL — pass via input or set JMETER_TARGET_URL secret"
+            exit 1
+          fi
+          PROTOCOL="http"
+          [[ "$URL" =~ ^https ]] && PROTOCOL="https"
+          STRIPPED="${URL#http://}"; STRIPPED="${STRIPPED#https://}"
+          HOST="${STRIPPED%%/*}"
+          PATH_PART="/${STRIPPED#*/}"
+          [ "$PATH_PART" = "/$HOST" ] && PATH_PART="/"
+          PORT="80"
+          [ "$PROTOCOL" = "https" ] && PORT="443"
+          if [[ "$HOST" == *":"* ]]; then
+            PORT="${HOST##*:}"; HOST="${HOST%%:*}"
+          fi
+          echo "host=$HOST" >> $GITHUB_OUTPUT
+          echo "port=$PORT" >> $GITHUB_OUTPUT
+          echo "protocol=$PROTOCOL" >> $GITHUB_OUTPUT
+          echo "path=$PATH_PART" >> $GITHUB_OUTPUT
+          echo "Target: $PROTOCOL://$HOST:$PORT$PATH_PART"
+
+      - name: Run JMeter
+        uses: rbhadti94/apache-jmeter-action@v0.5.0
+        with:
+          testFilePath: tests/jmeter/baseline.jmx
+          outputReportsFolder: tests/jmeter/results
+          args: |
+            -Jtarget.protocol=${{ steps.target.outputs.protocol }}
+            -Jtarget.host=${{ steps.target.outputs.host }}
+            -Jtarget.port=${{ steps.target.outputs.port }}
+            -Jtarget.path=${{ steps.target.outputs.path }}
+
+      - name: Check thresholds
+        id: check
+        run: bash scripts/jmeter-check.sh tests/jmeter/results/result.jtl tests/jmeter/thresholds.env
+
+      - name: Upload JMeter report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-report-${{ github.run_number }}
+          path: tests/jmeter/results/
+          retention-days: 14
+
+      - name: PR comment — JMeter result
+        if: github.event_name == 'pull_request' && always()
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: jmeter
+          message: |
+            ### JMeter Load Test: `${{ steps.check.outputs.result || 'UNKNOWN' }}`
+
+            **Target:** `${{ steps.target.outputs.host }}`
+            See artifact `jmeter-report-${{ github.run_number }}` for details.
+
+  # =====================================================
+  # JOB 3: Claude auto-fix — runs if any gate failed
+  # =====================================================
+  auto-fix:
+    name: Claude Auto-Fix
+    needs: [sonar, jmeter]
+    if: |
+      always() &&
+      ((github.event_name == 'workflow_dispatch' && inputs.auto_fix) || github.event_name == 'push') &&
+      (needs.sonar.outputs.gate_status == 'FAILED' || needs.jmeter.outputs.result == 'FAILED')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Download JMeter report
+        if: needs.jmeter.outputs.result == 'FAILED'
+        uses: actions/download-artifact@v4
+        with:
+          name: jmeter-report-${{ github.run_number }}
+          path: .quality-fix/jmeter
+
+      - name: Fetch Sonar issues
+        if: needs.sonar.outputs.gate_status == 'FAILED'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          PROJECT_KEY: ${{ github.event.repository.name }}
+        run: |
+          mkdir -p .quality-fix
+          curl -s -u "${SONAR_TOKEN}:" \
+            "${SONAR_HOST_URL}/api/issues/search?componentKeys=${PROJECT_KEY}&resolved=false&severities=BLOCKER,CRITICAL,MAJOR&ps=50" \
+            | jq '{total: .total, issues: [.issues[] | {key, rule, severity, component, line, message}]}' \
+            > .quality-fix/sonar-issues.json
+
+      - name: Claude auto-fix
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          claude --headless --dangerously-skip-permissions <<'PROMPT'
+          Quality gate failed. แก้ปัญหาตามไฟล์ใน .quality-fix/
+
+          ถ้ามี .quality-fix/sonar-issues.json:
+            - อ่าน issues — แก้ทุก BLOCKER/CRITICAL/MAJOR
+            - keep changes minimal — ห้ามแก้ behavior
+
+          ถ้ามี .quality-fix/jmeter/result.jtl หรือ HTML report:
+            - วิเคราะห์ slow endpoint (p95 > threshold)
+            - หา bottleneck ใน code (N+1, missing index, blocking I/O, sync ที่ควรเป็น async)
+            - แก้ที่ source ของ endpoint นั้น
+
+          กฎ:
+          - ห้ามแก้ node_modules/, dist/, build/, coverage/
+          - ห้ามแก้ .github/workflows/, .quality-fix/, tests/jmeter/baseline.jmx
+          - รัน tests verify ไม่พัง
+          - skip ถ้าไม่แน่ใจ → log ใน .quality-fix/skipped.md
+          PROMPT
+
+      - name: Check for changes
+        id: diff
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "fix(quality): auto-resolve gate failures"
+          branch: claude/quality-autofix-${{ github.run_number }}
+          delete-branch: true
+          title: "Claude: Auto-fix quality gate failures"
+          body: |
+            ## Quality Auto-Fix by Claude
+
+            | Check | Status |
+            |-------|--------|
+            | Sonar  | ${{ needs.sonar.outputs.gate_status || 'N/A' }} |
+            | JMeter | ${{ needs.jmeter.outputs.result || 'N/A' }} |
+
+            ### Review checklist
+            - [ ] Diff minimal + behavior-preserving
+            - [ ] Tests still pass
+            - [ ] No changes to workflows / configs
+            - [ ] Next run passes gate
+
+            _Generated by `.github/workflows/quality-pipeline.yml`_
+          labels: |
+            quality
+            auto-fix
+            claude

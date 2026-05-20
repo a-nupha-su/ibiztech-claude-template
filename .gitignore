@@ -43,3 +43,9 @@ pnpm-debug.log*
 
 # Local config
 *.local
+
+# Sonar/JMeter local secrets + auto-fix artifacts
+.env.sonar
+.sonar-fix/
+.quality-fix/
+tests/jmeter/results/

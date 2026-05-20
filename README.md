@@ -38,6 +38,13 @@ my-project/
 ├── CLAUDE.md                    ← AI guide (สร้างจาก variant ที่เลือก)
 ├── .claude/
 │   └── settings.json            ← permission allowlist + hooks (ลด "Allow?" prompts)
+├── .github/
+│   └── workflows/
+│       └── quality-pipeline.yml ← Sonar + JMeter + Claude (เลือกใน dispatch)
+├── sonar-project.properties     ← Sonar scanner config
+├── tests/jmeter/
+│   ├── baseline.jmx             ← JMeter test plan (parameterized)
+│   └── thresholds.env           ← P95/error/throughput budget
 ├── scripts/                     ← workflow automation
 │   ├── find-next.sh             ← หา task ถัดไป (พร้อมทำ + deps พร้อม)
 │   ├── new-task.sh              ← เริ่ม task: mark [~] + reserve TC code
@@ -50,7 +57,11 @@ my-project/
 │   ├── new-artifact.sh          ← register CA + copy raw file ไป client-artifacts/
 │   ├── check-artifacts.sh       ← scan artifacts ค้าง (auto run SessionStart)
 │   ├── check-dod.sh             ← verify 7 DoD ก่อน mark [x] (exit 1 ถ้าไม่ครบ)
-│   └── progress.sh              ← recalc Summary Progress ใน 07
+│   ├── progress.sh              ← recalc Summary Progress ใน 07
+│   ├── setup-sonar.sh           ← (re)configure SonarQube key/host
+│   ├── setup-jmeter.sh          ← (re)configure JMeter target + thresholds
+│   ├── run-jmeter.sh            ← run JMeter local (`bash scripts/run-jmeter.sh <URL>`)
+│   └── jmeter-check.sh          ← verify .jtl ตาม thresholds (ใช้ใน CI)
 ├── docs/
 │   ├── 01-requirement.md        ← FR/NFR/roles
 │   ├── 02-architecture.md       ← structure, conventions
@@ -155,6 +166,55 @@ bash scripts/log-issue.sh "Sidebar drawer ไม่ปิด" "LAYOUT-002" "even
 bash scripts/check-dod.sh AUTH-002
 # exit 0 = ผ่าน · exit 1 = ขาดข้อไหน
 ```
+
+---
+
+## Quality Pipeline (Sonar + JMeter + Claude)
+
+ทุกโปรเจกต์ที่สร้างจาก template ได้ workflow **Sonar + JMeter + Claude auto-fix** ติดมาเป็น 1 ไฟล์
+(`.github/workflows/quality-pipeline.yml`) เลือกเปิด/ปิดแต่ละตัวได้ตอนรัน
+
+### Setup (one-time per project)
+
+```bash
+bash scripts/setup-sonar.sh   # Sonar key/host (recommended)
+bash scripts/setup-jmeter.sh  # JMeter target + thresholds (optional)
+```
+
+ตั้ง secrets ใน GitHub (Settings → Secrets → Actions):
+
+| Secret | ใช้กับ | จำเป็น |
+|--------|--------|-------|
+| `SONAR_TOKEN` | Sonar | ✅ ถ้าใช้ Sonar |
+| `SONAR_HOST_URL` | Sonar | ✅ ถ้าใช้ Sonar |
+| `ANTHROPIC_API_KEY` | Claude auto-fix | ✅ ถ้าให้ Claude แก้ |
+| `JMETER_TARGET_URL` | JMeter | ⚪ optional (ใส่ใน input แทนได้) |
+
+### Trigger
+
+| Event | Sonar | JMeter | Auto-fix |
+|-------|-------|--------|----------|
+| `push` (main/develop) | ✅ default | ⬜ off | ✅ on fail |
+| `pull_request` | ✅ default + PR comment | ⬜ off | ⬜ off |
+| `workflow_dispatch` (manual) | ติ๊กเลือก | ติ๊กเลือก | ติ๊กเลือก |
+
+**Manual run:** Actions → **Quality Pipeline** → Run workflow → ติ๊กสิ่งที่ต้องการ → Run
+
+### Flow
+
+```
+push → Sonar scan + tests → Quality Gate
+                              ├─ PASS → ✅
+                              └─ FAIL → Claude แก้ + PR
+
+(manual + jmeter ON) → JMeter load test → Threshold check
+                                            ├─ PASS → ✅
+                                            └─ FAIL → Claude แก้ bottleneck + PR
+```
+
+- รายละเอียด Sonar: `docs/17-sonar-setup.md`
+- รายละเอียด JMeter: `docs/18-jmeter-setup.md`
+- ปิดทั้งหมด: ลบ `.github/workflows/quality-pipeline.yml`
 
 ---
 

@@ -48,6 +48,22 @@
       "Bash(bash scripts/*)",
       "Bash(./scripts/*)",
 
+      "Bash(sonar-scanner:*)",
+      "Bash(npx sonar-scanner:*)",
+      "Bash(npx -y sonar-scanner:*)",
+      "Bash(jmeter:*)",
+      "Bash(jq:*)",
+
+      "Edit(.github/workflows/quality-pipeline.yml)",
+      "Edit(sonar-project.properties)",
+      "Edit(tests/jmeter/**)",
+      "Write(tests/jmeter/**)",
+      "Edit(.env.sonar.example)",
+      "Write(.quality-fix/**)",
+      "Read(.quality-fix/**)",
+      "Write(.sonar-fix/**)",
+      "Read(.sonar-fix/**)",
+
       "Edit(docs/test-reports/**)",
       "Edit(docs/test-reports/screenshots/**)",
       "Edit(docs/10-value-research.md)",

@@ -29,6 +29,18 @@
 | `14-feature-release.md` | **Feature Brief / Release notes (presentation)** | **ทุก feature mark [x] → สร้าง FB ภายใน 24 ชม.** |
 | `15-sprint.md` | **Sprint Planning / Review / Retro** | **ทุก sprint เริ่ม + จบ** |
 | `16-client-artifacts.md` | **เอกสารจากลูกค้า — index + analysis** | **ก่อนสร้าง RR/FR/Task ใหม่ — เช็คก่อนว่ามี artifact ที่ overlap ไหม** |
+| `19-engineering-discipline.md` | **Debug Mantra · Scrutinize · Post-mortem gates · Tone rules** | **เจอ bug / ก่อน mark [x] / ก่อน close ISS / ทุก doc + commit** |
+
+---
+
+## Engineering Discipline (บังคับ — ดู `19-engineering-discipline.md`)
+
+ทุก dev/AI ในโปรเจกต์นี้ยึด 4 หลัก:
+
+1. **Debug Mantra (4 step)** — เจอ bug → reproduce reliably → fail path → falsify hypothesis → breadcrumb ledger · ห้าม fix ก่อนมี reliable repro
+2. **Scrutinize (outsider review)** — ก่อน mark `[x]` → intent → trace → verify → report · ห้าม "LGTM" · cite file:line ทุก finding · verdict: ship/fix-then-ship/rework/reject
+3. **Post-mortem gates** — ISS → `CLOSED` ต้องผ่าน 4 input: reliable repro + root cause + fix + validation · blameless · honest validation scope
+4. **Tone rules** — active voice · no hedging · cite file:line · blameless · distinguish "code says X" vs "I verified X"
 
 ---
 

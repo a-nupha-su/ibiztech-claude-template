@@ -475,18 +475,73 @@ Statements: __%   Branches: __%   Functions: __%   Lines: __%
 
 ---
 
+## 6.5 Self-Scrutinize (ก่อน mark `[x]` — บังคับ)
+
+> outsider review ของ change ตัวเอง ก่อนส่ง review จริง · pattern จาก `19-engineering-discipline.md` §B
+
+### 4-step pass
+
+```
+1. INTENT
+   - State goal ของ task 1 ประโยค (ภาษาตัวเอง)
+   - ถาม: มีวิธีง่าย/เล็ก/elegant กว่านี้ไหม?
+     • ไม่ทำเลย? · reuse ของที่มี? · 90/10 alternative?
+   - ถ้ามี alternative — แจ้ง user ก่อน proceed
+
+2. TRACE
+   - เดิน call graph end-to-end (ไม่ใช่แค่ diff)
+   - entry → calls → branches → mutations → exit/side effect
+   - รวม code รอบ diff (bug อยู่ที่ seam)
+   - จด surprise: branch ไม่คาด · dead code · state ที่ไม่รู้
+
+3. VERIFY (per claim)
+   - claim X → trace path A→B→C → "ที่ C: [observation] → holds / doesn't"
+   - edge cases: empty / null / unicode / huge / concurrent / retry
+   - silent changes: perf / error semantics / contract / format
+   - tests actually exercise traced path? (ไม่ใช่ mock บัง bug?)
+
+4. REPORT findings
+   - แต่ละ finding:
+     • Finding (1 ประโยค + file:line)
+     • Why it matters (consequence ไม่ใช่ principle)
+     • Evidence (trace step / input ที่ expose)
+     • Suggested (concrete, minimal)
+   - เรียง: blocker → major → nit
+```
+
+### Verdict ปิด 1 บรรทัด
+
+`ship` / `fix-then-ship` / `rework` / `reject` + เหตุผลใหญ่ที่สุด
+
+### Rules
+
+- ห้าม "LGTM" — ไม่เจออะไรก็ต้องระบุ trace อะไรไป + check อะไร
+- **cite หรือ didn't happen** — claim ทุกตัวต้องมี file:line
+- แยก "code บอก X" vs "ผม trace ยืนยัน X"
+- มี structural issue → ห้าม pad ด้วย style nit
+- no flattery, no hedging — state finding ตรง ๆ
+
+ระบุผลใน **Test Report Section 11 (Overall Result)**:
+```
+Self-scrutinize: PASSED
+Verdict: fix-then-ship (cookie config ต้อง secure flag — see Section 10 ISS-007)
+```
+
+---
+
 ## 7. Definition of Done (ทุก task)
 
 ```
-[ ] TC      → 11-test-cases.md มี TC + ไล่ตาม Steps แล้ว
-[ ] UNIT    → AAA + F.I.R.S.T pass (ถ้ามี logic)
-[ ] SMOKE   → 4-Case Matrix pass (ถ้ามี API)
-[ ] E2E     → MCP desktop + tablet + mobile + no console error
-[ ] REPORT  → test-reports/{TR-XXX}.md + screenshots + Standards ครบ + sign-off
-[ ] CATALOG → 11 อัพเดต Last Run/Result/Report (+ Issue History ถ้ามี bug)
-[ ] LOG     → 13-testcase-log.md 1 บรรทัด link TC + Report
-[ ] DOC     → doc อื่นที่เกี่ยวข้องอัพเดต
-[ ] STATUS  → mark [x] ใน 07-implement-plan.md
+[ ] TC          → 11-test-cases.md มี TC + ไล่ตาม Steps แล้ว
+[ ] UNIT        → AAA + F.I.R.S.T pass (ถ้ามี logic)
+[ ] SMOKE       → 4-Case Matrix pass (ถ้ามี API)
+[ ] E2E         → MCP desktop + tablet + mobile + no console error
+[ ] SCRUTINIZE  → 4-step self-review (§6.5) — verdict ≠ rework/reject
+[ ] REPORT      → test-reports/{TR-XXX}.md + screenshots + Standards ครบ + sign-off
+[ ] CATALOG     → 11 อัพเดต Last Run/Result/Report (+ Issue History ถ้ามี bug)
+[ ] LOG         → 13-testcase-log.md 1 บรรทัด link TC + Report
+[ ] DOC         → doc อื่นที่เกี่ยวข้องอัพเดต
+[ ] STATUS      → mark [x] ใน 07-implement-plan.md
 ```
 
 **ขาดข้อใดข้อหนึ่ง → mark `[!]` ไม่ใช่ `[x]`** + log ISS ใน `12-log-issues.md` + Report Status = `FAILED`/`BLOCKED`

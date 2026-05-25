@@ -49,3 +49,7 @@ pnpm-debug.log*
 .sonar-fix/
 .quality-fix/
 tests/jmeter/results/
+
+# Auto-pipeline deploy secrets + logs
+.env.deploy
+.deploy-logs/

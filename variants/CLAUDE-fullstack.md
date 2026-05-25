@@ -30,6 +30,19 @@
 | `15-sprint.md` | **Sprint Planning / Review / Retro** | **ทุก sprint เริ่ม + จบ** |
 | `16-client-artifacts.md` | **เอกสารจากลูกค้า — index + analysis** | **ก่อนสร้าง RR/FR/Task ใหม่ — เช็คก่อนว่ามี artifact ที่ overlap ไหม** |
 | `19-engineering-discipline.md` | **Debug Mantra · Scrutinize · Post-mortem gates · Tone rules** | **เจอ bug / ก่อน mark [x] / ก่อน close ISS / ทุก doc + commit** |
+| `.claude/skills/auto-pipeline/SKILL.md` | **End-to-end orchestrator** (research → approve → build → deploy) | **เริ่ม feature ใหม่ที่ scope ใหญ่ + ต้องการ auto-pilot** |
+
+---
+
+## Auto-Pipeline Mode (optional — end-to-end automation)
+
+เมื่อ user สั่ง **"ทำ auto pipeline เรื่อง X"** หรือ **"end-to-end"** หรือ **"research แล้ว deploy"**:
+- โหลด skill `auto-pipeline` → spawn researcher → user approve **ครั้งเดียว** → spawn 5-agent chain (architect → coder → tester → reviewer → deployer)
+- Deploy ผ่าน `scripts/deploy.sh` (อ่าน `.env.deploy`: vercel/docker/gh-actions/ssh)
+- หลัง phase 2 approve → **ห้ามถาม user เพิ่มจนกว่า deploy เสร็จ**
+- ต้องมี `.env.deploy` (copy จาก `.env.deploy.example`)
+
+ดูรายละเอียดเต็มใน `.claude/skills/auto-pipeline/SKILL.md`
 
 ---
 

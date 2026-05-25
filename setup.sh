@@ -78,6 +78,26 @@ else
   echo -e "${YELLOW}⏭  ข้าม JMeter — รัน 'bash scripts/setup-jmeter.sh' ทีหลังได้${NC}"
 fi
 
+# 5.2 Auto-Pipeline deploy config
+echo ""
+echo -e "${YELLOW}Auto-Pipeline (research → approve → build → deploy):${NC}"
+echo "  - Skill .claude/skills/auto-pipeline/ จัดการ orchestration"
+echo "  - scripts/deploy.sh dispatch ไป vercel/docker/gh-actions/ssh"
+echo "  - .env.deploy เก็บ target + secrets (gitignored)"
+echo ""
+read -p "Copy .env.deploy.example → .env.deploy ไหม? (Y/n): " SETUP_DEPLOY
+SETUP_DEPLOY="${SETUP_DEPLOY:-Y}"
+if [[ "$SETUP_DEPLOY" =~ ^[Yy]$ ]]; then
+  if [[ ! -f .env.deploy ]]; then
+    cp .env.deploy.example .env.deploy
+    echo -e "${GREEN}✅ .env.deploy created — แก้ DEPLOY_TARGET + DEPLOY_URL + secrets ก่อนใช้${NC}"
+  else
+    echo -e "${YELLOW}⏭  .env.deploy มีอยู่แล้ว — ข้าม${NC}"
+  fi
+else
+  echo -e "${YELLOW}⏭  ข้าม — รัน 'cp .env.deploy.example .env.deploy' ทีหลังได้${NC}"
+fi
+
 # 6. init git (ถ้ายังไม่มี)
 if [ ! -d ".git" ]; then
   git init -q
@@ -119,6 +139,10 @@ echo "  scripts/progress.sh                    ← recalc Summary Progress"
 echo "  scripts/setup-sonar.sh                 ← (re)configure Sonar key/host"
 echo "  scripts/setup-jmeter.sh                ← (re)configure JMeter target/thresholds"
 echo "  scripts/run-jmeter.sh                  ← run JMeter local (ก่อน push CI)"
+echo "  scripts/deploy.sh                      ← auto-deploy (vercel/docker/gh-actions/ssh)"
+echo "  scripts/pipeline-gate.sh               ← silent PostToolUse advisory checks"
+echo "  .claude/skills/auto-pipeline/          ← end-to-end orchestrator skill"
+echo "  .env.deploy.example                    ← copy → .env.deploy (deploy target + secrets)"
 echo ""
 echo -e "${YELLOW}ขั้นตอนถัดไป (ทำก่อนเขียนโค้ดบรรทัดแรก):${NC}"
 echo "  0. (ถ้า requirement ยังไม่ชัด) เปิด docs/10-value-research.md"
@@ -131,4 +155,8 @@ fi
 echo ""
 echo "  จากนั้นบอก Claude:"
 echo "  'อ่าน CLAUDE.md แล้วเริ่ม SETUP-001'"
+echo ""
+echo -e "${YELLOW}หรือใช้ Auto-Pipeline (end-to-end):${NC}"
+echo "  'ทำ auto pipeline เรื่อง <topic> ตั้งแต่ research จนถึง deploy'"
+echo "  → researcher → user approve (ครั้งเดียว) → architect → coder → tester → reviewer → deployer"
 echo ""

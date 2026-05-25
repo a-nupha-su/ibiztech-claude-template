@@ -37,11 +37,15 @@ docs/07-implement-plan.md  ← แตก FR เป็น task code (มี Wave/
 my-project/
 ├── CLAUDE.md                    ← AI guide (สร้างจาก variant ที่เลือก)
 ├── .claude/
-│   └── settings.json            ← permission allowlist + hooks (ลด "Allow?" prompts)
+│   ├── settings.json            ← permission allowlist + hooks (ลด "Allow?" prompts)
+│   └── skills/
+│       ├── sonar-quality-gate/  ← SonarQube-style analyzer + auto-fix
+│       └── auto-pipeline/       ← end-to-end orchestrator (research → deploy)
 ├── .github/
 │   └── workflows/
 │       └── quality-pipeline.yml ← Sonar + JMeter + Claude (เลือกใน dispatch)
 ├── sonar-project.properties     ← Sonar scanner config
+├── .env.deploy.example          ← copy → .env.deploy (DEPLOY_TARGET + secrets)
 ├── tests/jmeter/
 │   ├── baseline.jmx             ← JMeter test plan (parameterized)
 │   └── thresholds.env           ← P95/error/throughput budget
@@ -61,7 +65,9 @@ my-project/
 │   ├── setup-sonar.sh           ← (re)configure SonarQube key/host
 │   ├── setup-jmeter.sh          ← (re)configure JMeter target + thresholds
 │   ├── run-jmeter.sh            ← run JMeter local (`bash scripts/run-jmeter.sh <URL>`)
-│   └── jmeter-check.sh          ← verify .jtl ตาม thresholds (ใช้ใน CI)
+│   ├── jmeter-check.sh          ← verify .jtl ตาม thresholds (ใช้ใน CI)
+│   ├── deploy.sh                ← auto-deploy dispatcher (vercel/docker/gh-actions/ssh)
+│   └── pipeline-gate.sh         ← silent PostToolUse advisory (no block)
 ├── docs/
 │   ├── 01-requirement.md        ← FR/NFR/roles
 │   ├── 02-architecture.md       ← structure, conventions
@@ -135,8 +141,8 @@ my-project/
 
 | Event | Script | ทำอะไร |
 |-------|--------|--------|
-| SessionStart | `find-next.sh` | แสดง task ถัดไปทันทีเปิด Claude |
-| PostToolUse (Edit/Write) | `progress.sh --silent` | recalc Summary Progress |
+| SessionStart | `find-next.sh` + `check-artifacts.sh` | แสดง task ถัดไป + เตือน artifact ค้าง |
+| PostToolUse (Edit/Write) | `progress.sh --silent` + `pipeline-gate.sh` | recalc progress + ตรวจ pipeline state (ไม่ block) |
 
 ### Workflow ใช้ scripts (1 command แทน manual เดิม 5-10 ขั้น)
 
@@ -215,6 +221,55 @@ push → Sonar scan + tests → Quality Gate
 - รายละเอียด Sonar: `docs/17-sonar-setup.md`
 - รายละเอียด JMeter: `docs/18-jmeter-setup.md`
 - ปิดทั้งหมด: ลบ `.github/workflows/quality-pipeline.yml`
+
+---
+
+## Auto-Pipeline (Research → Approve → Build → Deploy)
+
+End-to-end orchestrator — สั่งงานทีเดียว ทำตั้งแต่ research จนถึง deploy โดย user approve **ครั้งเดียว**
+
+### Setup (one-time per project)
+
+```bash
+cp .env.deploy.example .env.deploy
+# แก้ DEPLOY_TARGET = vercel | docker | gh-actions | ssh
+# แก้ DEPLOY_URL + secrets ตาม target
+```
+
+### Trigger
+
+```
+"ทำ auto pipeline เรื่อง <topic> ตั้งแต่ research จนถึง deploy"
+หรือ "end-to-end เรื่อง <topic>"
+หรือ "/auto-pipeline <topic>"
+```
+
+### Flow (4 phases)
+
+```
+Phase 1: researcher        → docs/10-value-research.md (RR-XXX)
+Phase 2: ExitPlanMode      → user approve ครั้งเดียว (จุดเดียวที่ถาม)
+Phase 3: 5-agent chain     → architect → coder → tester → reviewer → deployer
+         (SendMessage ส่งต่อ, run_in_background, ไม่รบกวน user)
+Phase 4: deployer          → bash scripts/deploy.sh → health check → TR-deploy
+```
+
+### ใครจัดการ permission prompts
+
+| ขั้น | กลไก |
+|------|------|
+| Read/Grep/Bash builtin | `.claude/settings.json` allow list |
+| Test/lint/build (`pnpm test`, `pnpm build`) | allow list |
+| Sonar/JMeter | allow list |
+| Deploy commands (vercel/docker/kubectl/gh/rsync) | allow list |
+| Edit `src/`, `git commit/push`, `pnpm add` | ยัง ask (ตั้งใจ — human gate) |
+| Deploy secrets | `.env.deploy` (gitignored) |
+
+### ดูเพิ่ม
+
+- Skill ตัวเต็ม: `.claude/skills/auto-pipeline/SKILL.md`
+- Deploy dispatcher: `scripts/deploy.sh` (4 targets + health check + report)
+- Pipeline gate: `scripts/pipeline-gate.sh` (silent advisory, ไม่ block)
 
 ---
 

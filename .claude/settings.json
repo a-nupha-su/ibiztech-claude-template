@@ -54,6 +54,20 @@
       "Bash(jmeter:*)",
       "Bash(jq:*)",
 
+      "Bash(bash scripts/deploy.sh:*)",
+      "Bash(./scripts/deploy.sh:*)",
+      "Bash(npx vercel:*)",
+      "Bash(docker build:*)",
+      "Bash(docker push:*)",
+      "Bash(kubectl rollout:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run watch:*)",
+      "Bash(rsync:*)",
+      "Edit(.env.deploy.example)",
+      "Write(.deploy-logs/**)",
+      "Read(.deploy-logs/**)",
+
       "Edit(.github/workflows/quality-pipeline.yml)",
       "Edit(sonar-project.properties)",
       "Edit(tests/jmeter/**)",
@@ -152,6 +166,10 @@
           {
             "type": "command",
             "command": "bash scripts/progress.sh --silent 2>/dev/null || true"
+          },
+          {
+            "type": "command",
+            "command": "bash scripts/pipeline-gate.sh 2>/dev/null || true"
           }
         ]
       }

@@ -1,5 +1,9 @@
 {
   "$comment": "Pre-authorized operations for ibiztech-claude-template workflow. Reduces 'Allow?' prompts for routine, safe tasks. Destructive/sensitive ops still require approval.",
+  "statusLine": {
+    "type": "command",
+    "command": "sh -c 'if [ -f \"${CLAUDE_PROJECT_DIR}/.claude/helpers/statusline.cjs\" ]; then exec node \"${CLAUDE_PROJECT_DIR}/.claude/helpers/statusline.cjs\"; else exec node \"$HOME/.claude/helpers/statusline.cjs\"; fi'"
+  },
   "permissions": {
     "allow": [
       "Read(**)",

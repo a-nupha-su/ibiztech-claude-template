@@ -9,6 +9,25 @@
 
 ---
 
+## User Journey Diagrams (สร้างด้วย skill `archify`)
+
+> บังคับ — 1 `workflow` diagram ต่อ 1 role ตาม Roles & Permissions ใน `01-requirement.md` (ห้ามรวมทุก role ไว้ภาพเดียว)
+
+| Role | ไฟล์ | outcome ที่ journey ต้องจบ | สถานะ |
+|------|-----|------------------------|------|
+| [admin] | `docs/diagrams/journey-admin.workflow.html` | [เช่น อนุมัติคำขอสำเร็จ] | [ ] |
+| [user] | `docs/diagrams/journey-user.workflow.html` | [เช่น ส่งคำขอสำเร็จ + เห็นสถานะ] | [ ] |
+
+สร้าง/อัปเดต:
+```bash
+node .claude/skills/archify/bin/archify.mjs deliver workflow docs/diagrams/journey-<role>.workflow.json docs/diagrams/journey-<role>.workflow.html --quality showcase --json
+```
+เพิ่ม role ใหม่ใน `01-requirement.md` → ต้องมี journey ใหม่ก่อน mark task `[x]`
+
+**Tech flow อยู่ใน `02-architecture.md`**
+
+---
+
 ## Design Tokens
 
 ### Color (Tailwind config)

@@ -40,7 +40,8 @@ my-project/
 │   ├── settings.json            ← permission allowlist + hooks (ลด "Allow?" prompts)
 │   └── skills/
 │       ├── sonar-quality-gate/  ← SonarQube-style analyzer + auto-fix
-│       └── auto-pipeline/       ← end-to-end orchestrator (research → deploy)
+│       ├── auto-pipeline/       ← end-to-end orchestrator (research → deploy)
+│       └── archify/             ← system flow diagram (tech + user journey ต่อ role)
 ├── .github/
 │   └── workflows/
 │       └── quality-pipeline.yml ← Sonar + JMeter + Claude (เลือกใน dispatch)
@@ -268,6 +269,25 @@ Phase 4: deployer          → bash scripts/deploy.sh → health check → TR-de
 ### ดูเพิ่ม
 
 - Skill ตัวเต็ม: `.claude/skills/auto-pipeline/SKILL.md`
+
+---
+
+## System Flow Diagram (skill `archify`) — บังคับก่อนเขียนโค้ด
+
+หลัง `01-requirement.md` (role นิ่งแล้ว) และก่อนแตก task ใน `07-implement-plan.md` ต้องเจน flow 2 ฝั่ง:
+
+| ฝั่ง | type | ไปอยู่ที่ |
+|-----|------|---------|
+| **Tech** — ภาพรวมระบบ / critical API flow / data pipeline / state ของ entity | `architecture`, `sequence`, `dataflow`, `lifecycle` | `docs/02-architecture.md` |
+| **User** — journey **1 ไฟล์ต่อ 1 role** ตาม Roles & Permissions | `workflow` | `docs/06-ux-ui-design.md` |
+
+```bash
+node .claude/skills/archify/bin/archify.mjs deliver <type> docs/diagrams/<in>.json docs/diagrams/<out>.html --quality showcase --json
+```
+
+ต้อง exit 0 + 9 artifact checks + 0 error/warning · output เก็บคู่ JSON IR + HTML ใน `docs/diagrams/` · architecture เปลี่ยน → regenerate + `archify compare` แนบใน PR
+
+- Skill ตัวเต็ม: `.claude/skills/archify/SKILL.md`
 - Deploy dispatcher: `scripts/deploy.sh` (4 targets + health check + report)
 - Pipeline gate: `scripts/pipeline-gate.sh` (silent advisory, ไม่ block)
 

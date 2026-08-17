@@ -31,6 +31,7 @@
 | `16-client-artifacts.md` | **เอกสารจากลูกค้า — index + analysis** | **ก่อนสร้าง RR/FR/Task ใหม่ — เช็คก่อนว่ามี artifact ที่ overlap ไหม** |
 | `19-engineering-discipline.md` | **Debug Mantra · Scrutinize · Post-mortem gates · Tone rules** | **เจอ bug / ก่อน mark [x] / ก่อน close ISS / ทุก doc + commit** |
 | `.claude/skills/auto-pipeline/SKILL.md` | **End-to-end orchestrator** (research → approve → build → deploy) | **เริ่ม feature ใหม่ที่ scope ใหญ่ + ต้องการ auto-pilot** |
+| `.claude/skills/archify/SKILL.md` | **System flow diagram generator** (architecture / workflow / sequence / dataflow / lifecycle) | **ก่อนเริ่มโค้ดระบบ/โมดูลใหม่ — เจน flow ฝั่ง tech + user journey ต่อ role** |
 
 ---
 
@@ -66,6 +67,40 @@
 4. AI **ห้าม improvise** requirement — ทุก FR/Task ต้อง trace กลับ CA หรือ internal decision
 
 ตอน user สั่ง "ทำ feature X" → AI ตรวจก่อน: feature นี้มาจาก CA ไหน? ถ้าไม่มี → ถาม user ว่ามี artifact ที่เกี่ยวข้องไหม
+
+---
+
+## System Flow Diagram Rule (บังคับ — skill `archify`)
+
+ทุกระบบ/โมดูลใหญ่ ต้องมี flow การทำงานที่เจนด้วย skill `archify` ครบ **2 ฝั่ง** ก่อนเริ่มเขียนโค้ด (ทำหลัง `01-requirement.md` + role นิ่ง, ก่อน task ใน `07-implement-plan.md`)
+
+### ฝั่ง Tech — ระบบทำงานยังไง
+
+| ต้องมี | type | ใช้เมื่อ |
+|-------|------|--------|
+| ภาพรวมระบบ (app / API / DB / external service) | `architecture` | **บังคับทุกระบบ** |
+| flow เรียก API เส้นสำคัญ | `sequence` | ทุก critical path (auth, จ่ายเงิน, submit งาน) |
+| การไหลของข้อมูล / report / ETL | `dataflow` | ระบบที่มี pipeline หรือ report |
+| state machine ของ entity หลัก | `lifecycle` | entity ที่มีหลายสถานะ (order / คำขอ / เคส) |
+
+### ฝั่ง User — คนใช้ทำงานยังไง
+
+- ทำ `workflow` diagram **แยก 1 ไฟล์ต่อ 1 role** ตาม **Roles & Permissions ใน `01-requirement.md`** — ห้ามเดา role เอง ห้ามรวมทุก role ไว้ภาพเดียว
+- แต่ละ journey ต้องจบที่ outcome จริงของ role นั้น (เช่น "อนุมัติคำขอสำเร็จ") ไม่ใช่ list เมนู
+
+### กติกา
+
+1. เก็บคู่กันทุกครั้งใน `docs/diagrams/` — JSON IR `<scope>.<type>.json` + HTML `<scope>.<type>.html`
+   - tech: `system.architecture.*`, `<flow>.sequence.*`, `<pipeline>.dataflow.*`, `<entity>.lifecycle.*`
+   - user: `journey-<role>.workflow.*` (เช่น `journey-admin.workflow.json`)
+2. Acceptance ก่อนแนบเอกสาร/ก่อนบอกว่าเสร็จ:
+   ```bash
+   node .claude/skills/archify/bin/archify.mjs deliver <type> docs/diagrams/<in>.json docs/diagrams/<out>.html --quality showcase --json
+   ```
+   ต้อง exit 0 + 9 artifact checks + 0 error / 0 warning
+3. ลิงก์กลับเอกสาร: tech diagram → `02-architecture.md` · user journey → `06-ux-ui-design.md`
+4. architecture เปลี่ยน → regenerate + `archify compare architecture <base.json> <head.json>` แนบใน PR / `14-feature-release.md`
+5. เพิ่ม role ใหม่ใน `01-requirement.md` → ต้องมี `journey-<role>.workflow` ใหม่ด้วย ถึงจะ mark task `[x]` ได้
 
 ---
 

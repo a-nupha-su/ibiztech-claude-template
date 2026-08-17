@@ -9,6 +9,27 @@
 
 ---
 
+## System Flow Diagrams (สร้างด้วย skill `archify`)
+
+> บังคับ — ดูกติกาเต็มใน `CLAUDE.md` หัวข้อ *System Flow Diagram Rule*
+
+| Diagram | type | ไฟล์ | สถานะ |
+|---------|------|-----|------|
+| ภาพรวมระบบ | `architecture` | `docs/diagrams/system.architecture.html` | [ ] |
+| [critical flow เช่น login] | `sequence` | `docs/diagrams/[flow].sequence.html` | [ ] |
+| [pipeline / report] | `dataflow` | `docs/diagrams/[pipeline].dataflow.html` | [ ] |
+| [entity หลัก] | `lifecycle` | `docs/diagrams/[entity].lifecycle.html` | [ ] |
+
+สร้าง/อัปเดต:
+```bash
+node .claude/skills/archify/bin/archify.mjs deliver architecture docs/diagrams/system.architecture.json docs/diagrams/system.architecture.html --quality showcase --json
+```
+ต้อง exit 0 + 9 checks + 0 error/warning · architecture เปลี่ยน → regenerate + `archify compare` แนบใน PR
+
+**User journey ต่อ role อยู่ใน `06-ux-ui-design.md`**
+
+---
+
 ## Folder Structure
 
 ### Fullstack (Next.js App Router)

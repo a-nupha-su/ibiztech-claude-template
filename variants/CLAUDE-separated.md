@@ -13,7 +13,7 @@
 
 | ไฟล์ | เนื้อหา | อ่านเมื่อ |
 |-----|--------|---------|
-| `01-requirement.md` | FR/NFR/roles/permissions | ก่อนสร้าง feature ใหม่ |
+| `01-requirement.md` | FR/NFR/roles/permissions | ก่อนสร้าง feature ใหม่ · **ยังมี `สถานะ: TEMPLATE` → เข้า Kickoff ก่อน** |
 | `02-architecture.md` | monorepo structure, module pattern, naming | ก่อนสร้างไฟล์/folder ใหม่ |
 | `03-tech-stack.md` | versions, install commands | ก่อนติดตั้ง package |
 | `04-database-schema.md` | Prisma schema ทุก model | ก่อนเขียน query / migration |
@@ -34,6 +34,47 @@
 | `templates/README.md` | **เทมเพลต SRS/BR (.docx) + Manhours (.xlsx)** — ตัวสร้าง + ด่านตรวจ + ประโยคสั่งงาน | **ทำ SRS/BR/spec/requirement หรือประเมิน manhours/ใบเสนอราคา** |
 | `scripts/check-requirements.sh` | **ตรวจ tool/skill ที่ต้องใช้ + ถามก่อนติดตั้ง** | **ก่อนเริ่มงานที่ต้องใช้ tool ภายนอก** |
 | `.claude/skills/archify/SKILL.md` | **System flow diagram generator** (architecture / workflow / sequence / dataflow / lifecycle) | **ก่อนเริ่มโค้ดระบบ/โมดูลใหม่ — เจน flow ฝั่ง tech + user journey ต่อ role** |
+
+---
+
+## Kickoff — เริ่มโปรเจกต์ใหม่ (บังคับ — ทำก่อนทุกอย่าง)
+
+**เข้า Kickoff เมื่อ:** `docs/01-requirement.md` ยังมีบรรทัด `สถานะ: TEMPLATE` อยู่ — ไม่ว่า user จะสั่งอะไร
+(เช่น "ทำตามเทมเพลตนี้", "เริ่มโปรเจกต์", "เริ่ม SETUP-001", "ทำ auto pipeline") ให้หยุดแล้วเข้า Kickoff ก่อน
+ห้ามเขียนโค้ด ห้ามเริ่ม task ใน `07` จนกว่าจะจบขั้น 4
+
+### ขั้น 1 — เก็บของที่มีอยู่ก่อนถาม
+- รัน `bash scripts/check-artifacts.sh` + อ่าน `16-client-artifacts.md`
+- ถาม user ว่ามีเอกสารจากลูกค้าไหม (TOR, BRD, ภาพหน้าจอระบบเดิม, บันทึกประชุม) → ถ้ามีให้ลงทะเบียนด้วย `bash scripts/new-artifact.sh "<TYPE>" "<FROM>" "<SOURCE_FILE>"` แล้วอ่านก่อน
+- ข้อไหนเอกสารตอบแล้ว ไม่ต้องถามซ้ำ
+
+### ขั้น 2 — ถามคำถามชุดเดียว (รวบในรอบเดียว ใช้ `AskUserQuestion` ถ้ามี)
+1. ปัญหาที่ระบบนี้แก้ · ใครใช้ · วัดว่าสำเร็จด้วยอะไร
+2. ลูกค้า/เจ้าของ · stakeholders · deadline
+3. **Role จริงทุก role** — แต่ละ role ทำอะไรได้ / ห้ามทำอะไร
+4. โมดูล/ฟีเจอร์หลักรอบแรก · สิ่งที่ **ไม่** ทำรอบนี้
+5. ระบบภายนอกที่ต้องต่อ (payment, LINE, SSO, ERP, อีเมล/SMS ฯลฯ)
+6. ข้อจำกัด — ที่ deploy, ข้อมูลส่วนบุคคล (PDPA), ภาษา, อุปกรณ์ที่ใช้
+7. เรื่องที่ยังลังเล / ยังไม่ตัดสินใจ
+
+**ห้ามเดาคำตอบ** · ข้อไหน user ยังไม่รู้ → เขียนใน `01` ว่า `ยังไม่ยืนยัน` · ถ้าเป็นการเลือกทางเทคนิคหรือธุรกิจ → เปิด RR ใน `10`
+
+### ขั้น 3 — เขียนเอกสารตามลำดับ (ห้ามข้ามขั้น)
+
+| # | ไฟล์ | ทำอะไร | ผ่านเมื่อ |
+|---|------|--------|---------|
+| 1 | `10-value-research.md` | ทุกเรื่องที่ลังเล → `bash scripts/new-research.sh <TOPIC> "<title>"` | ทุก RR = `APPROVED` (ไม่มีเรื่องลังเล = ข้ามได้) |
+| 2 | `01-requirement.md` | Overview · Roles (ลบแถวตัวอย่างทิ้ง) · FR · NFR · Out of scope | user ยืนยัน role + FR |
+| 3 | `03-tech-stack.md` · `04-database-schema.md` · `05-*` | stack · schema · API spec หรือ data dictionary ตาม variant | สอดคล้องกับ FR ทุกข้อ |
+| 4 | `docs/diagrams/` (skill `archify`) | `architecture` + `workflow` แยก 1 ไฟล์ต่อ role (ดูหัวข้อ System Flow Diagram Rule) | `deliver` exit 0 / 0 error / 0 warning |
+| 5 | `07-implement-plan.md` | แตก FR เป็น task code + wave + dependency (ลบแถวตัวอย่างที่ไม่ใช้) | ทุก FR มี task คู่ |
+
+### ขั้น 4 — หยุดรอ approve (ครั้งเดียว)
+สรุปให้ user: ไฟล์ที่เขียน · role · จำนวน FR / task · ข้อที่ยัง `ยังไม่ยืนยัน` → ขอ approve
+- approve แล้ว → ลบบรรทัด `สถานะ: TEMPLATE` ใน `01` + bump เวอร์ชัน → เริ่ม `SETUP-001` (ดู task ถัดไปด้วย `bash scripts/find-next.sh`)
+- ไม่ approve → แก้ตาม feedback แล้ววนกลับขั้นที่เกี่ยวข้อง
+
+> Auto-Pipeline บนโปรเจกต์ที่ยังเป็น TEMPLATE → ทำ Kickoff ขั้น 1–2 ก่อน แล้วค่อยเข้า Phase 1 ของ auto-pipeline
 
 ---
 

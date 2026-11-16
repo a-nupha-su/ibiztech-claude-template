@@ -57,6 +57,8 @@ rsync -a \
   --exclude='.venv/' \
   --exclude='__pycache__/' \
   --exclude='create-project.sh' \
+  --exclude='.claude/settings.local.json' \
+  --exclude='.deploy-logs/' \
   "$TEMPLATE_DIR/" "$DEST/"
 
 echo -e "${GREEN}✅ Copy เสร็จ${NC}"

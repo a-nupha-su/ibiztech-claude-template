@@ -14,19 +14,28 @@ bash setup.sh
 ```
 Script จะถามชื่อโปรเจกต์ + ประเภท แล้วสร้างไฟล์ให้อัตโนมัติ
 
-### 3. เขียน docs ก่อนโค้ด (สำคัญมาก)
+### 3. เปิด Claude Code ในโฟลเดอร์โปรเจกต์ แล้วสั่ง
 ```
-(ถ้า requirement ยังไม่ชัด)
-docs/10-value-research.md  ← ทำ research ก่อน user APPROVED ค่อยเข้า FR
-                              (มี 10-Value Framework + Source Quality T1-T6)
+"อ่าน CLAUDE.md แล้วเริ่ม Kickoff"
+```
+(หรือพิมพ์ "ทำตามเทมเพลตนี้" ก็ได้ เพราะ `docs/01-requirement.md` มีบรรทัด `สถานะ: TEMPLATE` อยู่
+AI จะเข้า Kickoff เอง และ hook ตอนเปิด session ก็เตือนซ้ำอีกชั้น)
 
-docs/01-requirement.md     ← เขียน FR ทั้งหมด (ถ้ามี research ให้อ้าง RR-XXX)
-docs/07-implement-plan.md  ← แตก FR เป็น task code (มี Wave/Model/Agent)
+Kickoff จะพาไปตามลำดับนี้ และ **ยังไม่เขียนโค้ด** จนกว่าคุณจะ approve:
+
+```
+1. เก็บเอกสารลูกค้า (16-client-artifacts) → ถามคำถามชุดเดียว (เป้าหมาย · role จริง · โมดูล · ระบบภายนอก · ข้อจำกัด)
+2. เรื่องที่ลังเล → docs/10-value-research.md (RR-XXX) → ต้อง APPROVED
+3. docs/01-requirement.md  ← FR / role จริง (ลบแถวตัวอย่าง)
+4. docs/03 · 04 · 05       ← stack · schema · API spec / data dictionary
+5. docs/diagrams/          ← archify: architecture + journey 1 ไฟล์ต่อ role
+6. docs/07-implement-plan.md ← แตก FR เป็น task code
+7. สรุปให้ approve → ลบ "สถานะ: TEMPLATE" → เริ่ม SETUP-001
 ```
 
-### 4. บอก Claude เริ่มงาน
+### 4. หลัง approve แล้ว
 ```
-"อ่าน CLAUDE.md แล้วเริ่ม SETUP-001"
+"อ่าน CLAUDE.md แล้วทำ task ถัดไป"
 ```
 
 ---
@@ -38,6 +47,7 @@ my-project/
 ├── CLAUDE.md                    ← AI guide (สร้างจาก variant ที่เลือก)
 ├── .claude/
 │   ├── settings.json            ← permission allowlist + hooks (ลด "Allow?" prompts)
+│   ├── agents/                  ← researcher / system-architect / coder / tester / reviewer (ใช้กับ auto-pipeline)
 │   └── skills/
 │       ├── sonar-quality-gate/  ← SonarQube-style analyzer + auto-fix
 │       ├── auto-pipeline/       ← end-to-end orchestrator (research → deploy)

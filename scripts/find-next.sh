@@ -6,8 +6,21 @@
 set -e
 PLAN="docs/07-implement-plan.md"
 
+if [ ! -f "CLAUDE.md" ] && [ -d "variants" ]; then
+  echo "⚠️  ยังไม่ได้รัน setup.sh — ยังไม่มี CLAUDE.md ของโปรเจกต์ · บอก user ให้รัน 'bash setup.sh' ก่อน"
+  exit 0
+fi
+
 if [ ! -f "$PLAN" ]; then
   echo "⚠️  ไม่พบ $PLAN — รัน setup.sh ก่อน"
+  exit 0
+fi
+
+if grep -q 'สถานะ: TEMPLATE' docs/01-requirement.md 2>/dev/null; then
+  echo ""
+  echo "⚠️  โปรเจกต์ยังไม่ผ่าน Kickoff (docs/01-requirement.md ยังเป็น TEMPLATE)"
+  echo "    → ทำหัวข้อ 'Kickoff' ใน CLAUDE.md ก่อน: เก็บเอกสารลูกค้า → ถามคำถามชุดเดียว → เขียน 10/01/03-05 → archify → 07 → ขอ approve"
+  echo "    → ห้ามเริ่ม task / เขียนโค้ดจนกว่าจะ approve"
   exit 0
 fi
 

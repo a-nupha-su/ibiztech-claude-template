@@ -11,6 +11,7 @@ Thumbs.db
 # Claude Code internal (per-project state)
 .claude-flow/
 .claude/projects/
+.claude/settings.local.json
 
 # Node (ถ้า project import package)
 node_modules/

@@ -53,3 +53,9 @@ tests/jmeter/results/
 # Auto-pipeline deploy secrets + logs
 .env.deploy
 .deploy-logs/
+
+# Python (templates/)
+.venv
+__pycache__/
+*.pyc
+~$*

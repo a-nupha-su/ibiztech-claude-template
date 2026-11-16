@@ -42,6 +42,7 @@ my-project/
 │       ├── sonar-quality-gate/  ← SonarQube-style analyzer + auto-fix
 │       ├── auto-pipeline/       ← end-to-end orchestrator (research → deploy)
 │       └── archify/             ← system flow diagram (tech + user journey ต่อ role)
+├── templates/                   ← เทมเพลต SRS/BR (.docx) + Manhours (.xlsx) + ด่านตรวจ
 ├── .github/
 │   └── workflows/
 │       └── quality-pipeline.yml ← Sonar + JMeter + Claude (เลือกใน dispatch)
@@ -51,6 +52,7 @@ my-project/
 │   ├── baseline.jmx             ← JMeter test plan (parameterized)
 │   └── thresholds.env           ← P95/error/throughput budget
 ├── scripts/                     ← workflow automation
+│   ├── check-requirements.sh    ← ตรวจ tool/skill ที่ขาด + ถามก่อนติดตั้ง
 │   ├── find-next.sh             ← หา task ถัดไป (พร้อมทำ + deps พร้อม)
 │   ├── new-task.sh              ← เริ่ม task: mark [~] + reserve TC code
 │   ├── new-report.sh            ← สร้าง Test Report จาก 09 §6 + screenshots/
@@ -142,7 +144,7 @@ my-project/
 
 | Event | Script | ทำอะไร |
 |-------|--------|--------|
-| SessionStart | `find-next.sh` + `check-artifacts.sh` | แสดง task ถัดไป + เตือน artifact ค้าง |
+| SessionStart | `find-next.sh` + `check-artifacts.sh` + `check-requirements.sh --check --quiet` | แสดง task ถัดไป + เตือน artifact ค้าง + เตือน tool ที่ขาด |
 | PostToolUse (Edit/Write) | `progress.sh --silent` + `pipeline-gate.sh` | recalc progress + ตรวจ pipeline state (ไม่ block) |
 
 ### Workflow ใช้ scripts (1 command แทน manual เดิม 5-10 ขั้น)
@@ -290,6 +292,41 @@ node .claude/skills/archify/bin/archify.mjs deliver <type> docs/diagrams/<in>.js
 - Skill ตัวเต็ม: `.claude/skills/archify/SKILL.md`
 - Deploy dispatcher: `scripts/deploy.sh` (4 targets + health check + report)
 - Pipeline gate: `scripts/pipeline-gate.sh` (silent advisory, ไม่ block)
+
+---
+
+## เทมเพลตเอกสาร SRS/BR + Manhours (`templates/`)
+
+| ทำอะไร | ใช้ | ด่านก่อนส่ง |
+|---|---|---|
+| เอกสาร SRS / BR (.docx) ภาษาไทย โครง 9 ส่วน | `templates/business-requirement/build_br.py` | `check_br.py` exit 0 |
+| ใบประเมิน Manhours / ราคา (.xlsx) | `templates/manhours/build_manhours.py` | `recalc_check.py` → `total_errors: 0` |
+
+สั่ง Claude ได้เลย เช่น `"ทำ SRS ระบบ <ชื่อ> ให้ลูกค้า <ชื่อ> ด้วย templates/business-requirement"`
+หรือ `"ประเมิน manhours โครงการ <ชื่อ> ด้วย templates/manhours"` — ประโยคเต็ม + วิธีทำเองอยู่ใน
+[`templates/README.md`](templates/README.md) · ตัวอย่างทั้งหมดเป็น mockup ไม่ใช่ข้อมูลลูกค้า
+
+---
+
+## Tool / Skill ที่ขาด — ถามก่อนติดตั้ง
+
+```bash
+bash scripts/check-requirements.sh                  # ตรวจทุกกลุ่ม ขาดตัวไหนถาม (y/N) ทีละตัวก่อนติดตั้ง
+bash scripts/check-requirements.sh srs manhours     # ตรวจเฉพาะกลุ่ม
+bash scripts/check-requirements.sh --check          # ตรวจอย่างเดียว ไม่ถาม ไม่ติดตั้ง (exit 1 = ขาดตัวบังคับ)
+```
+
+| กลุ่ม | ตรวจอะไร |
+|---|---|
+| `core` | git · Node.js 18+ · pnpm · python3 · skill archify / auto-pipeline / sonar-quality-gate |
+| `srs` | OfficeCLI · `templates/.venv` (python-docx, pythainlp) · ฟอนต์ TH Sarabun New · Word (ไม่บังคับ) |
+| `manhours` | `templates/.venv` (openpyxl) · LibreOffice |
+| `test` | Claude Code CLI · MCP Playwright |
+| `quality` | sonar-scanner · JMeter (ไม่บังคับ — CI มีให้แล้ว) |
+
+- `setup.sh` เรียกให้ตอนตั้งโปรเจกต์ · SessionStart hook รัน `--check --quiet` ทุกครั้งที่เปิด session
+- ใน Claude: ถ้าขาดตัวไหน Claude ต้อง **ถามผู้ใช้ก่อนติดตั้ง** (กติกาใน `CLAUDE.md`) ไม่ติดตั้งเอง ไม่ข้ามเงียบ
+- ตัวที่ติดตั้งอัตโนมัติไม่ได้ (ฟอนต์, Word) script จะบอกวิธีติดตั้งเอง
 
 ---
 

@@ -19,7 +19,6 @@
       "Bash(grep:*)",
       "Bash(rg:*)",
       "Bash(tree:*)",
-
       "Bash(pnpm test:*)",
       "Bash(pnpm test)",
       "Bash(pnpm vitest:*)",
@@ -33,7 +32,6 @@
       "Bash(pnpm format:*)",
       "Bash(pnpm dev)",
       "Bash(curl:*)",
-
       "Bash(git status)",
       "Bash(git status:*)",
       "Bash(git log:*)",
@@ -42,22 +40,18 @@
       "Bash(git show:*)",
       "Bash(git ls-files:*)",
       "Bash(git config --get:*)",
-
       "Bash(pnpm prisma generate)",
       "Bash(pnpm prisma format)",
       "Bash(pnpm dlx prisma generate)",
       "Bash(pnpm dlx prisma format)",
       "Bash(pnpm dlx prisma validate)",
-
       "Bash(bash scripts/*)",
       "Bash(./scripts/*)",
-
       "Bash(sonar-scanner:*)",
       "Bash(npx sonar-scanner:*)",
       "Bash(npx -y sonar-scanner:*)",
       "Bash(jmeter:*)",
       "Bash(jq:*)",
-
       "Bash(bash scripts/deploy.sh:*)",
       "Bash(./scripts/deploy.sh:*)",
       "Bash(npx vercel:*)",
@@ -71,7 +65,6 @@
       "Edit(.env.deploy.example)",
       "Write(.deploy-logs/**)",
       "Read(.deploy-logs/**)",
-
       "Edit(.github/workflows/quality-pipeline.yml)",
       "Edit(sonar-project.properties)",
       "Edit(tests/jmeter/**)",
@@ -81,7 +74,6 @@
       "Read(.quality-fix/**)",
       "Write(.sonar-fix/**)",
       "Read(.sonar-fix/**)",
-
       "Edit(docs/test-reports/**)",
       "Edit(docs/test-reports/screenshots/**)",
       "Edit(docs/10-value-research.md)",
@@ -99,7 +91,6 @@
       "Edit(docs/07-implement-plan.md)",
       "Write(docs/test-reports/**)",
       "Write(docs/test-reports/screenshots/**)",
-
       "mcp__playwright__*"
     ],
     "ask": [
@@ -159,6 +150,10 @@
           {
             "type": "command",
             "command": "bash scripts/find-next.sh 2>/dev/null || true"
+          },
+          {
+            "type": "command",
+            "command": "bash scripts/check-requirements.sh --check --quiet 2>/dev/null || true"
           }
         ]
       }

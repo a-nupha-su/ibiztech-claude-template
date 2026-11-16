@@ -54,6 +54,8 @@ rsync -a \
   --exclude='.git/' \
   --exclude='.claude-flow/' \
   --exclude='.DS_Store' \
+  --exclude='.venv/' \
+  --exclude='__pycache__/' \
   --exclude='create-project.sh' \
   "$TEMPLATE_DIR/" "$DEST/"
 

@@ -31,6 +31,8 @@
 | `16-client-artifacts.md` | **เอกสารจากลูกค้า — index + analysis** | **ก่อนสร้าง RR/FR/Task ใหม่ — เช็คก่อนว่ามี artifact ที่ overlap ไหม** |
 | `19-engineering-discipline.md` | **Debug Mantra · Scrutinize · Post-mortem gates · Tone rules** | **เจอ bug / ก่อน mark [x] / ก่อน close ISS / ทุก doc + commit** |
 | `.claude/skills/auto-pipeline/SKILL.md` | **End-to-end orchestrator** (research → approve → build → deploy) | **เริ่ม feature ใหม่ที่ scope ใหญ่ + ต้องการ auto-pilot** |
+| `templates/README.md` | **เทมเพลต SRS/BR (.docx) + Manhours (.xlsx)** — ตัวสร้าง + ด่านตรวจ + ประโยคสั่งงาน | **ทำ SRS/BR/spec/requirement หรือประเมิน manhours/ใบเสนอราคา** |
+| `scripts/check-requirements.sh` | **ตรวจ tool/skill ที่ต้องใช้ + ถามก่อนติดตั้ง** | **ก่อนเริ่มงานที่ต้องใช้ tool ภายนอก** |
 | `.claude/skills/archify/SKILL.md` | **System flow diagram generator** (architecture / workflow / sequence / dataflow / lifecycle) | **ก่อนเริ่มโค้ดระบบ/โมดูลใหม่ — เจน flow ฝั่ง tech + user journey ต่อ role** |
 
 ---
@@ -67,6 +69,39 @@
 4. AI **ห้าม improvise** requirement — ทุก FR/Task ต้อง trace กลับ CA หรือ internal decision
 
 ตอน user สั่ง "ทำ feature X" → AI ตรวจก่อน: feature นี้มาจาก CA ไหน? ถ้าไม่มี → ถาม user ว่ามี artifact ที่เกี่ยวข้องไหม
+
+---
+
+## Tool / Skill ที่ขาด — ถามก่อนติดตั้ง (บังคับ)
+
+ก่อนเริ่มงานที่ต้องใช้ tool หรือ skill ให้ตรวจก่อนว่าเครื่องนี้มีครบ:
+
+```bash
+bash scripts/check-requirements.sh --check <กลุ่ม>   # core · srs · manhours · test · quality (ไม่ระบุ = ทุกกลุ่ม)
+```
+
+- exit 0 → ลงมือได้
+- exit 1 / มีบรรทัด `ขาด` → **ใช้ AskUserQuestion ถามผู้ใช้ก่อน** บอก 3 อย่าง: ขาดอะไร · ใช้ทำอะไรในงานนี้ · คำสั่งติดตั้ง
+  - ผู้ใช้ตกลง → รันคำสั่งติดตั้งที่ script แสดง แล้วรัน `--check` ซ้ำจนผ่าน
+  - ผู้ใช้ไม่ตกลง → หยุดเฉพาะขั้นที่ต้องใช้ตัวนั้น และบอกตรง ๆ ว่าขั้นไหนยังไม่ได้ทำ
+  - ตัวที่ติดตั้งอัตโนมัติไม่ได้ (เช่น ฟอนต์ TH Sarabun New, Microsoft Word) → แจ้งวิธีติดตั้งตามหมายเหตุของ script
+- **ห้าม** ติดตั้งเองโดยไม่ถาม · **ห้าม** ข้ามขั้นเงียบ ๆ · **ห้าม** ใช้ทางอ้อมแทน (เช่น เขียน python-docx เอง
+  แทน OfficeCLI หรือไม่ตรวจสูตร Excel) โดยไม่บอกผู้ใช้
+- SessionStart hook รัน `--check --quiet` ให้อยู่แล้ว ถ้าเห็นบรรทัด `⚠️ [ขาด]` ตอนเปิด session ให้ถามผู้ใช้ทันทีที่งานต้องใช้ตัวนั้น
+
+---
+
+## SRS / BR และ Manhours (บังคับ — ใช้เทมเพลตใน `templates/` เท่านั้น)
+
+| งาน | ใช้ | ด่านที่ต้องผ่านก่อนบอกว่าเสร็จ |
+|---|---|---|
+| เอกสาร SRS / BR / spec / requirement (.docx) | `templates/business-requirement/build_br.py` (อ่าน `STRUCTURE.md` ก่อน) | `check_br.py <ไฟล์>` exit 0 (ฉบับส่งจริงเพิ่ม `--final`) |
+| ประเมิน manhours / ใบเสนอราคา (.xlsx) | `templates/manhours/build_manhours.py` (`preview()` ก่อน `build()`) | `recalc_check.py <ไฟล์>` ได้ `total_errors: 0` |
+
+- ห้ามคิดโครงเอกสารใหม่ ห้ามเปลี่ยนสี ฟอนต์ หรือโครงคอลัมน์ของ Manhours
+- Manhours: ทุกงานย่อยกระจายชั่วโมงตามตำแหน่งจริง · ท้ายไฟล์ต้องมี NOTES บอกขั้นที่ความมั่นใจต่ำ
+- ตรวจ `bash scripts/check-requirements.sh --check srs manhours` ก่อนเริ่ม (ดูหัวข้อด้านบน)
+- ไฟล์ผลลัพธ์เก็บใน `docs/` · ไฟล์จากลูกค้าเก็บผ่าน `16-client-artifacts.md` ห้ามเอาไปไว้ใน `templates/`
 
 ---
 

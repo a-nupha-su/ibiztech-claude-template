@@ -98,6 +98,11 @@ else
   echo -e "${YELLOW}⏭  ข้าม — รัน 'cp .env.deploy.example .env.deploy' ทีหลังได้${NC}"
 fi
 
+# 5.3 ตรวจ tool / skill ที่ต้องใช้ — ขาดตัวไหนถามก่อนติดตั้ง
+echo ""
+echo -e "${YELLOW}ตรวจ tool / skill ที่ template ต้องใช้ (ขาดตัวไหนจะถามก่อนติดตั้ง):${NC}"
+bash scripts/check-requirements.sh || echo -e "${YELLOW}⏭  ยังขาดบางตัว — รัน 'bash scripts/check-requirements.sh' ทีหลังได้${NC}"
+
 # 6. init git (ถ้ายังไม่มี)
 if [ ! -d ".git" ]; then
   git init -q
@@ -143,6 +148,8 @@ echo "  scripts/deploy.sh                      ← auto-deploy (vercel/docker/gh
 echo "  scripts/pipeline-gate.sh               ← silent PostToolUse advisory checks"
 echo "  .claude/skills/auto-pipeline/          ← end-to-end orchestrator skill"
 echo "  .claude/skills/archify/                ← system flow diagram generator (tech + user journey/role)"
+echo "  templates/                             ← เทมเพลต SRS/BR (.docx) + Manhours (.xlsx) — ดู templates/README.md"
+echo "  scripts/check-requirements.sh          ← ตรวจ tool/skill ที่ขาด + ถามก่อนติดตั้ง"
 echo "  .env.deploy.example                    ← copy → .env.deploy (deploy target + secrets)"
 echo ""
 echo -e "${YELLOW}ขั้นตอนถัดไป (ทำก่อนเขียนโค้ดบรรทัดแรก):${NC}"
